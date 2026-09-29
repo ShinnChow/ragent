@@ -26,6 +26,7 @@ import {
 import { buildQuery } from "@/utils/helpers";
 import { createAgentStreamResponse } from "@/hooks/useAgentStream";
 import {
+  applyConfirmStatus,
   applyTextBlockSeal,
   applyToolFrame,
   replayBlock,
@@ -188,7 +189,7 @@ export const useAgentChatStore = create<AgentChatState>((set, get) => {
     });
   };
 
-  // 改写确认卡状态；带上 messageStatus 时一并落定挂起态，卡片有了裁决这条消息就不该再拦住新提问
+  // 结算确认卡及其关联的拒绝调用；带上 messageStatus 时一并解除消息挂起态
   const setConfirmStatus = (
     messageId: string,
     blockId: number,
@@ -201,9 +202,7 @@ export const useAgentChatStore = create<AgentChatState>((set, get) => {
           ? {
               ...message,
               ...(messageStatus ? { messageStatus } : {}),
-              blocks: message.blocks.map((block) =>
-                block.id === blockId ? { ...block, status } : block
-              )
+              blocks: applyConfirmStatus(message.blocks, blockId, status)
             }
           : message
       )
